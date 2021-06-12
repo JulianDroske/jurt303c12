@@ -1,0 +1,4 @@
+#!/bin/sh
+
+[ -d /mnt/dietpi ] || mkdir -p /mnt/dietpi
+mount /root/dietpi.img /mnt/dietpi || /mnt/dietpi/umounta

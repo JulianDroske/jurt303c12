@@ -1,0 +1,27 @@
+{
+	"name": "JuRb",
+	"manifest_version": 2,
+	"description": "JuRt::NetPageHack",
+	"version": "1.0",
+	
+	"browser_action": {
+		"default_icon": "icon.png",
+		"default_popup": "popup.html"
+	},
+	"content_scripts": [
+		{
+			"matches": ["<all_urls>"],
+			"js" : ["main.js"]
+		}
+	],
+	"permissions": [
+		"<all_urls>",
+		"webRequest",
+		"webRequestBlocking"
+	],
+	"background": {
+		"scripts": ["bg.js"],
+		"persistent": true
+	},
+	"web_accessible_resources": ["tools.js","Contents/*.js"]
+}

@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# cd "$(dirname $0)"
+
+# LDIR="/usr/work/Rootfs"
+
+# export LD_LIBRARY_PATH="$LDIR"/lib:"$LDIR"/lib/i386-linux-gnu:"$LDIR"/usr/lib:"$LDIR"/usr/lib/i386-linux-gnu
+# chroot . /qemu-i386-static /lib/ld-linux.so.2 /IDA/idaq "$@"
+chroot . /idaq-bg "$@"

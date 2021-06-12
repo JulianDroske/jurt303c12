@@ -1,0 +1,11 @@
+#!/busybox sh
+
+# cd "$(dirname $0)"
+
+# LDIR="/usr/work/Rootfs"
+
+# export LD_LIBRARY_PATH="$LDIR"/lib:"$LDIR"/lib/i386-linux-gnu:"$LDIR"/usr/lib:"$LDIR"/usr/lib/i386-linux-gnu
+cd /IDA
+export QT_XCB_NO_MITSHM=1
+# /qemu-i386-static /lib/ld-linux.so.2 ./idaq "$@"
+/qemu-i386-static ./idaq "$@"

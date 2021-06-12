@@ -1,0 +1,47 @@
+#!/bin/sh
+
+cd "$(dirname $0)"
+./mount --bind /dev ./dev
+./mount --bind /dev/pts ./dev/pts
+./mount --bind /proc ./proc
+./mount --bind /sys ./sys
+./mount -t tmpfs tmpfs ./tmp
+# ./mount -t tmpfs tmpfs ./run
+./mount --bind /run ./run
+./mount -t tmpfs tmpfs ./var/tmp
+./mount -t tmpfs tmpfs ./root
+./mount -t tmpfs tmpfs ./home
+./mount -o bind /lib/modules ./lib/modules
+# ./mount -o rw /root/include.img ./lib/modules/3.10.108/include
+# ./mount -o rw /root/include-lineage.img ./lib/modules/3.10.108/include
+# ./mount -o rw /root/include.img ./lib/modules/3.10.108/include-ori
+./mount -o ro,bind /lib/firmware ./lib/firmware
+./mount --bind / ./baseos
+./mount -o rw,remount ./baseos
+# mkdir -p ./run/user
+# ./mount --bind /run/user ./run/user
+
+cp -rf ./.roprep/* .
+
+# optional
+./mount -t tmpfs tmpfs ./var/log
+./mount -t tmpfs tmpfs ./var/cache
+# ./mount -t tmpfs tmpfs ./var/run
+./mount -t tmpfs tmpfs ./var/spool/mqueue
+
+. ./root/.bashrc
+chroot . /bin/bash
+# patch for consoles
+# chroot . /patchsh
+
+# pkill -kill -t 
+# pkill -t $(tty |sed 's/\/dev\///g') dbus-daemon
+# pkill -t $(tty |sed 's/\/dev\///g') -o dus-daemon
+killall gpg-agent
+
+for x in $(./bin/busybox-static fuser ./); do
+	[ ! "$( ps |grep $x |grep chr)" == "" ] || kill $x
+done
+
+# u./mount ./dev/pts ./dev ./proc ./sys ./tmp ./run ./var/tmp ./lib/modules ./lib/firmware ./root ./home ./baseos
+./umounta

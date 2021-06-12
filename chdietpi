@@ -1,0 +1,4 @@
+#!/bin/sh
+
+[ -d /mnt/dietpi ] || exit -1
+chroot /mnt/dietpi /bin/bash

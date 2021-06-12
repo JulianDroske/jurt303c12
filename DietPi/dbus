@@ -1,0 +1,8 @@
+#!/bin/bash
+
+mkdir -p /run/user/100000/dbus
+
+declare -x DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/100000/dbus/user_bus_socket
+
+dbus-daemon --address=$DBUS_SESSION_BUS_ADDRESS --session &
+declare -x DBUS_SESSION_BUS_PID=$!

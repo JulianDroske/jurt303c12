@@ -1,0 +1,14 @@
+#!/bin/sh
+
+LNK=http://192.168.43.1:10809
+Z="http://${1#--ip=}"
+expr "$Z" '!=' "http://$1" >/dev/null && LNK=$Z && shift 1
+
+export http_proxy=$LNK
+export HTTP_PROXY=$LNK
+export https_proxy=$LNK
+export HTTPS_PROXY=$LNK
+export all_proxy=$LNK
+export ALL_PROXY=$LNK
+
+"$@"

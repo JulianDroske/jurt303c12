@@ -1,0 +1,23 @@
+#!/bin/sh
+
+export PATH=/bin:/sbin:/usr/bin:/usr/sbin
+
+Wait(){
+	/bin/sh
+}
+
+mount -t devtmpfs devtmpfs /dev
+mount -t sysfs sysfs /sys
+mount -t proc none /proc
+
+# Dev fix
+insmod /lib/modules/tngdisp.ko
+mknod /dev/fb0 c 29 0
+ln -s /dev/block/pci/pci0000:00/0000:00:01.0/by-name /dev/block/by-name
+
+# Enable a debug daemon
+/sbin/adbd --root_seclabel=u:r:su:s0 --device_banner=jurtdev &
+
+# Find Data Partition # Rootfs
+mount /dev/block/by-name/data /data || Wait
+switch_root /data /sbin/init || Wait

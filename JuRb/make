@@ -1,0 +1,9 @@
+#!/bin/sh
+
+mkpkg(){
+	rm -rf "$1" && 7z a "$1" ./*
+}
+
+cd "$(dirname $0)"
+
+mkpkg jurb.xpi

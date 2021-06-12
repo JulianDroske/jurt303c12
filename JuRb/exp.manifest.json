@@ -1,0 +1,68 @@
+{
+	//	必须的字段3个
+	"name":	"MyExtension",	//	扩展名称
+	"version":	"1.0",	//	版本。由1到4个整数构成。多个整数间用"."隔开
+	"manifest_version":	2,	//	manifest文件版本号。Chrome18开始必须为2
+	//	建议提供的字段3个
+	"description":	"",	//	描述。132个字符以内
+	"icons":	{
+		"16":	"image/icon-16.png",
+		"48":	"image/icon-48.png",
+		"128":	"image/icon-128.png"
+	},	//扩展图标。推荐大小16，48，128
+	"default_locale":	"en",	//	国际化
+	//	以下字段多选一，或者都不提供
+	"browser_action":	{
+		"default_icon":	"image/icon-128.png",
+		"default_title":	"My	Test",
+		"default_popup":	"html/browser.html"
+	},	//地址栏右侧图标管理。含图标及弹出页面的设置等
+	"page_action":	{
+		"default_icon":	"image/icon-48.png",
+		"default_title":	"My	Test",
+		"default_popup":	"html/page.html"
+	},	//地址栏最后附加图标。含图标及行为等
+	"theme":	{},	//	主题，用于更改整个浏览器的外观
+	"app":	{},	//	指定扩展需要跳转到的URL
+	//	根据需要提供
+	"background":	{
+		"scripts":	[
+			"lib/jquery-3.3.1.min.js",
+			"js/background.js"
+		],
+		"page":"html/background.html"
+	},	//	指定扩展进程的background运行环境
+	"chrome_url_overrides":	{
+		"pageToOverride":	"html/overrides.html"
+	},	//替换页面。详见注释1
+	"content_scripts":	[{
+		"matches":	["https://www.baidu.com/*"],
+		"css":	["css/mystyles.css"],
+		"js":	["lib/jquery-3.3.1.min.js",	"js/content.js"]
+	}],	//	指定在web页面运行的脚本。详见注释2
+	"content_security_policy":	"",	//	安全策略
+	"file_browser_handlers":	[],
+	"homepage_url":	"http://xxx",	//	扩展的官方主页
+	"incognito":	"spanning",	//	或"split"。详见注释3
+	"intents":	{},	//	用户操作意图描述
+	"key":	"",	//	扩展唯一标识。不需要人为指定
+	"minimum_chrome_version":	"1.0",	//	扩展所需chrome的最小版本
+	"nacl_modules":	[],	//	消息与本地处理模块映射
+	"offline_enabled":	true,	//	是否允许脱机运行
+	"omnibox":	{
+		"keyword":	"myKey"
+	},	//ominbox即地址栏。用于响应地址栏的输入事件
+	"options_page":	"aFile.html",	//	选项页。用于在扩展管理页面跳转到选项设置
+	"permissions":	[
+		"https://www.baidu.com/*",
+		"background",
+		"tabs"
+	],	//权限。详见注释4
+	"plugins":	[{
+		"path":	"extension_plugin.dll",
+		"public":	true
+	}],	//	扩展。可调用第三方扩展
+	"requirements":	{},	//	指定所需要的特殊技术。目前只支持"3D"
+	"update_url":	"http://path/to/updateInfo.xml",	//	自动升级
+	"web_accessible_resources":	[]	//	指定资源路径，为String数组
+}

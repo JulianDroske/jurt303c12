@@ -1,0 +1,3 @@
+#!/bin/sh
+
+jmtpfs -o nonempty,allow_other,sync_read,splice_write,splice_read -f "$@"

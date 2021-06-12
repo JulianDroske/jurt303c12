@@ -1,0 +1,4 @@
+#!/bin/sh
+
+deploydietpi && /mnt/dietpi/chr
+umount /mnt/dietpi

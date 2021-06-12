@@ -1,0 +1,7 @@
+#!/bin/bash
+
+. /etc/profile
+# export $(dbus-launch)
+export DISPLAY=:0
+kwin_wayland --width 720 --height 1280 --xwayland $@
+

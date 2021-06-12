@@ -1,0 +1,21 @@
+#!/bin/sh
+
+killall vmpk fluidsynth
+fluidsynth -a alsa /usr/work/FluidR3_GM.sf2 </dev/zero >/dev/null &
+vmpk &
+sleep 1
+
+GN(){
+	aconnect -l |grep "$1" |head -n 1 |cut -d' ' -f2
+}
+
+OUT="$(GN 'VMPK Output')"
+FLUID="$(GN 'FLUID Synth')"
+
+echo $OUT, $FLUID
+
+aconnect ${OUT}0 ${FLUID}0
+
+read tmp
+
+killall fluidsynth vmpk

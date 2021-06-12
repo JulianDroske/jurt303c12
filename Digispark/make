@@ -1,0 +1,25 @@
+#!/bin/sh
+
+panic(){
+	echo $1
+	exit 1;
+}
+
+if [ ! -n "$1" -o ! -d "$1" ]; then
+	echo Incorrect arguments.
+	echo "Usage: $0 <source_dir>"
+	exit 1;
+fi
+
+cd "$(dirname $0)"
+
+TOL=avr-
+MCU="-mmcu=attiny85"
+
+OUT="/tmp"
+FOUT="${1}_out.hex"
+[ -d "$OUT" ] || mkdir "$OUT"
+[ -f "$FOUT" ] || touch "$FOUT"
+"$TOL"gcc -Wall -Os -DF_CPU=1000000 $MCU -o "$OUT/main.o" -I./include "$1/"* \
+	&& avr-objcopy -j .text -j .data -O ihex "$OUT/main.o" "$OUT/main.hex" \
+	&& cp "$OUT/main.hex" "$FOUT"

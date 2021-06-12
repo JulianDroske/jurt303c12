@@ -1,0 +1,7 @@
+#!/bin/sh
+
+# export DISPLAY=:0
+openbox --replace &
+xfce4-session &
+# onboard &
+

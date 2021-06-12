@@ -1,0 +1,7 @@
+[Unit]
+
+[Service]
+ExecStart=sh /root/jurt.sh
+
+[Install]
+WantedBy=default.target

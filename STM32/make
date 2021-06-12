@@ -1,0 +1,31 @@
+#!/bin/sh
+
+panic(){
+	echo $1
+	exit 1;
+}
+
+if [ ! -n "$1" -o ! -d "$1" ]; then
+	echo Incorrect arguments.
+	echo "Usage: $0 <source_dir>"
+	exit 1;
+fi
+
+cd "$(dirname $0)"
+
+if [ ! -f stmflash.ld -o ! -f startup.s ]; then
+	echo stmflash.ld or startup.s does not exist.
+	exit 1;
+fi
+
+TOL=arm-none-eabi-
+MCU="-mthumb -mcpu=cortex-m3 -mlittle-endian"
+
+[ ! -f startup.o ] && { "$TOL"gcc -c $MCU -Wall -o startup.o startup.s || panic "Compiling startup.s failed." ;}
+OUT="/tmp"
+FOUT="${1}_out.bin"
+# [ -d "$OUT" ] || mkdir "$OUT"
+[ -f "$FOUT" ] || touch "$FOUT"
+"$TOL"gcc -c $MCU -g -Wall -o "$OUT/main.o" -I./include "$1/"* \
+	&& "$TOL"gcc -o "$OUT/lnk.elf" "$OUT/main.o" startup.o $MCU -T stmflash.ld -specs=nosys.specs -static \
+	&& "$TOL"objcopy -O binary "$OUT/lnk.elf" "$OUT/final.bin" && cp "$OUT/final.bin" "$FOUT"

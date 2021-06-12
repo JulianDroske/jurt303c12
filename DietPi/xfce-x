@@ -1,0 +1,8 @@
+#!/bin/bash
+
+declare -x DISPLAY=:1
+/dbus
+killall Xtightvnc
+# vncserver -dpi 80 -geometry 720x1280
+/vnc-forceScale || exit
+/xfce-bg

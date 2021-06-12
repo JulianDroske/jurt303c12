@@ -1,0 +1,5 @@
+#!/bin/sh
+
+LNK=192.168.43.1:10809
+
+links2 -http-proxy $LNK -https-proxy $LNK "$@"

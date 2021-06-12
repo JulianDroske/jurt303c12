@@ -1,0 +1,3 @@
+#!/bin/sh
+
+chrome --disable-setuid-sandbox --user-data-dir= --no-sandbox --incognito "$@"

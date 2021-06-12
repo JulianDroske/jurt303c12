@@ -1,0 +1,9 @@
+#!/bin/bash
+
+. /etc/profile
+# export $(dbus-launch)
+declare -x DISPLAY=:0
+declare -x XDG_RUNTIME_DIR=/run/user/10001
+# Xwayland &
+su -c 'kwin_wayland --xwayland --width 720 --height 1280 $@' dietpi
+

@@ -1,0 +1,9 @@
+#!/bin/sh
+
+cd "$(dirname $0)"
+./umount ./var/tmp
+./umount ./var/cache
+./umount ./var/log
+./umount ./var/run
+./umount ./var/spool/mqueue
+./umount ./dev/pts ./dev ./proc ./sys ./tmp ./run ./var/tmp ./lib/modules/3.10.108/include ./lib/modules/3.10.108/include-ori ./lib/modules ./lib/firmware ./root ./home ./baseos

@@ -1,0 +1,7 @@
+#!/bin/sh
+
+cd "$(dirname $0)"
+
+export QT_XCB_NO_MITSHM=1
+
+proot -r . -q qemu-i386-static bash

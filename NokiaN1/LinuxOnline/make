@@ -1,0 +1,23 @@
+#!/bin/sh
+
+cd "$(dirname $0)"
+
+# Ramdisk
+rm -rf /tmp/ramdisk.gz
+cd ramdisk
+find . | cpio -H newc -o | gzip -9 > /tmp/ramdisk.gz
+cd ..
+
+# Bootimg
+mkbootimg \
+	--kernel zImage \
+	--ramdisk /tmp/ramdisk.gz \
+	--second second \
+	--cmdline "$(cat cmdline)" \
+	--base "$(cat base)" \
+	--pagesize "$(cat pagesize)" \
+	--kernel_offset "$(cat kerneloff)" \
+	--ramdisk_offset "$(cat ramdiskoff)" \
+	--second_offset "$(cat secondoff)" \
+	--tags_offset "$(cat tagsoff)" \
+	-o ~/linux.img

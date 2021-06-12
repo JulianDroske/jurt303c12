@@ -1,0 +1,7 @@
+#!/bin/bash
+
+export DISPLAY
+declare -x DISPLAY=":0"
+
+weston --xwayland --width=720 --height=1280 --use-pixman --fullscreen --modules=xwayland.so --config=/weston.ini $@
+
