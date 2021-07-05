@@ -60,4 +60,4 @@ vpn:			Vpn bootstrap for regular programs
 
 Clash:			Bootstrap for clash
 
-live2web:		Similar to live2d, Web version of Editor and Player
+live2web:		Similar to live2d, Web version of Editor and Player ( Working )
