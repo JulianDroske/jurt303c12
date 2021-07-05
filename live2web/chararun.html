@@ -1,0 +1,475 @@
+<html>
+	<body style='margin: 0px; padding: 0px; position: absolute; width: 100%; height: 100%; display: flex; flex-direction: column; overflow: hidden;'>
+		<div rem='maincontent' style='flex:1; background: black;'>
+			<!-- <div id='MAIN' style='width: 100%; height: 100%; position: relative; z-index: 0;'></div> -->
+			<!-- <div id='DRAG' style='width: 100%; height: 100%; position: relative; z-index: 1; top: -100%; margin-bottom: -100%; display: none;'></div> -->
+			<!-- <div id='MAIN' style='width: 0; height: 0; position: absolute;'></div> -->
+			<!-- <div rem='useless' style='width: 100%; height: 100%; position: relative; z-index: 0;'></div> -->
+			<div id='MAIN' style='width: 100%; height: 100%; position: relative; z-index: 0; background: white;   transform-origin: center center; rotate: 0;'></div>
+			<div id='DRAG' style='width: 100%; height: 100%; position: relative; z-index: 1; top: -100%; margin-bottom: -100%; display: none;'></div>
+		</div>
+		<div id='CTRL' style='position: relative; width: 100%; bottom: 0px; left: 0px; display: flex; flex-direction: row;'>
+			<button id='START'>Start</button>
+			<button id='STOP'>Stop</button>
+			<span style='width: 2px;'></span>
+			<button id='FRONT'><</button>
+			<div id='bar' style='flex: 1; background: grey; padding-right: 10px;'>
+				<div id='BLOCK' style='position: relative; background: black; width: 10px; height: 100%; left: 0%;'></div>
+			</div>
+			<button id='AFTER'>></button>
+		</div>
+		<div style='width: 100%; height: 2px; background: black;'></div>
+		<div rem='INF' style='position: relative; width: 100%; bottom: 0px; background: grey; display: flex; justify-content: space-between;'>
+			<span id='INF'></span>
+			<span style='position: relative; right: 0px; '>Frame: <span id='Frame'></span></span>
+		</div>
+	</body>
+	<script>
+
+		const body = document.getElementById('MAIN');
+		const Drag = document.getElementById('DRAG');
+		const Start = document.getElementById('START');
+		const Stop = document.getElementById('STOP');
+		const Front = document.getElementById('FRONT');
+		const After = document.getElementById('AFTER');
+		const Scroll = document.getElementById('BLOCK');
+		const Bar = document.getElementById('bar');
+		const INf = document.getElementById('INF');
+		const FRame = document.getElementById('Frame');
+		
+		const _editor = window.parent.window;
+
+		var idV = 1;	// ++ every use
+		var focus = -1;	// id!!!
+
+		var Objs = [];	// contains anim
+		
+		var animLength = 200;
+		// .anim[i] = [frame, type, x, y, size, rotateCenterXY:percent, rotate]
+		// frame: -1 = intinify
+		// type: enum{smooth, direct, custom=function(t:percent){return [x, y, size, rotateCenter, rotate]}}
+
+		var intervTime = 20;
+		
+		function editor(operation, data){
+			if(_editor != null) _editor.postMessage({operation: operation, data: data}, '*');
+		}
+
+		function mkObj(name, id, url, anim){
+			return {
+				name: name,
+				id: id,
+				url: url,
+				anim: anim || [
+					[0, 'smooth', 0, 0, 1, [50, 50], 0],
+					[-1, 'smooth', 0, 0, 1, [50, 50], 0]
+				]
+			};
+		};
+
+		function reset(fresh){
+			idV = 1;
+			Objs = [];
+			body.innerHTML = '';
+			if(fresh){
+				Objs.push(mkObj('Main', idV++, 'null'));
+				var waste = document.createElement('div');
+				waste.style='display: none';
+				body.appendChild(waste);
+			}
+		}
+		reset(true);
+
+		function nowObji(){
+			if(focus == 'MAIN') return [-1, body];
+			for(var i=0, n=Objs.length; i<n; ++i){
+				if(focus == Objs[i]) return [i, body.children[i]];
+			}
+			return null;
+		}
+
+
+		function _add(url, name, style, anim, id){
+			var obj = document.createElement('img');
+			obj.style = style || 'position: absolute; top: 0; left: 0; transform: scaleX(1) scaleY(1); transform-origin: center center; rotate: 0;';
+			// transform:rotate never use
+			obj.src=url;
+			body.appendChild(obj);
+
+			if(id && id>idV) idV = id;
+
+			// backgrounds
+			/* Objs.push({
+				name: name,
+				id: idV++,
+				url: obj.src,
+				anim: anim || [
+					[0, 'smooth', 0, 0, 1, [50, 50], 0],
+					[-1, 'smooth', 0, 0, 1, [50, 50], 0]
+				]
+			});*/
+
+			Objs.push(mkObj(name, idV++, obj.src, anim));
+		}
+
+		function add(file, name, style, anim, id){
+			
+			// obj.src=window.URL.createObjectURL(url);
+
+			if(file instanceof File){
+				var reader = new FileReader();
+				reader.onload = function(){
+					_add(this.result, name, style, anim, id);
+				}
+
+				reader.onerror = function(){
+					console.log('Error when loading ' + name);
+					editor('loaderror', file.id);
+				}
+				reader.readAsDataURL(file);
+			}else{
+				// string path
+				_add(file, name, style, anim, id);
+			}
+
+			//! url: dataURL is loaded only when compiling
+			
+		}
+
+		function remove(index){
+			Objs.splice(index,1);
+			body.removeChild(body.children[index]);
+		}
+
+		function swapObj(i1 ,i2){
+			[Objs[i1], Objs[i2]] = [Objs[i2], Objs[i1]];
+
+			// [body.children[i1], body.children[i2]] = [body.children[i2], body.children[i1]];
+			if(i1>i2) [i1, i2] = [i2, i1];
+			body.insertBefore(body.children[i2], body.children[i1]);
+		}
+
+		function sendProps(M){
+			if(M == 'MAIN' || ediTarget == body){
+				editor('prop', {
+					x: ediTarget.offsetLeft,
+					y: ediTarget.offsetTop,
+					w: ediTarget.offsetWidth,
+					h: ediTarget.offsetHeight,
+					rotx: ediTarget.style.transformOrigin.split(' ')[0],
+					roty: ediTarget.style.transformOrigin.split(' ')[1],
+					// rotate: new RegExp('rotate\\((.*)\\)').exec(ediTarget.style.transform)[1].replace('deg','').trim(),
+					rotate: ediTarget.style.rotate
+				});
+				return;
+			}
+			editor('prop', {
+				x: ediTarget.offsetLeft,
+				y: ediTarget.offsetTop,
+				zx: new RegExp('scaleX\\((.*?)\\)').exec(ediTarget.style.transform)[1].trim(),
+				zy: new RegExp('scaleY\\((.*?)\\)').exec(ediTarget.style.transform)[1].trim(),
+				rotx: ediTarget.style.transformOrigin.split(' ')[0],
+				roty: ediTarget.style.transformOrigin.split(' ')[1],
+				// rotate: new RegExp('rotate\\((.*)\\)').exec(ediTarget.style.transform)[1].replace('deg','').trim(),
+				rotate: ediTarget.style.rotate
+			});
+		}
+
+
+		var iFrame = 0;
+
+		// use clientLeft
+		var Scroller = {
+			nowFrame: 0,
+			onScroll: function(offsetX){
+				// var t=0;
+				// Scroll.style.left = '' + (t=offsetX*100/Bar.offsetWidth) + '%';
+				this.setFrame((offsetX*animLength/Bar.offsetWidth)|0);
+				_iAnim = false;
+			},
+			setFrame: function(frame){
+				frame |= 0;
+				if(frame > animLength) frame = animLength;
+				if(frame < 0) frame = 0;
+				Scroll.style.left = '' + (frame*100/animLength) + '%';
+				FRame.innerHTML = frame;
+				iFrame = frame;
+				Anim(frame);
+			},
+			getFrame: function(){
+				
+			}
+		};
+
+		Front.onclick = function(){
+			Scroller.setFrame(iFrame-1);
+		}
+
+		After.onclick = function(){
+			Scroller.setFrame(iFrame+1);
+		}
+
+		// offsetX: Firefox 40+
+
+		var starTBar = false;
+		// scroller
+		(function(){
+			var offsetLeft = 0;
+			Bar.onmousedown = function(ev){
+				var e = ev;	// || window.event;
+				offsetLeft = Bar.offsetLeft;
+				Scroller.onScroll(e.clientX - Bar.offsetLeft);
+				starTBar = true;
+			}
+			// Bar.onmousemove = function(ev){
+			// document.body.onmousemove = function(ev){
+			document.body.addEventListener('mousemove', function(ev){
+				if(starTBar == false) return;
+				var e = ev;	// || window.event;
+
+				Scroller.onScroll(e.clientX - Bar.offsetLeft);
+			});
+			Bar.onmouseup = function(ev){
+				var e = ev;	// || window.event;
+				starTBar = false;
+			}
+		})();
+
+		var starTDrag = null;
+		var ediTarget = null;
+
+		(function(){
+			var ctrl = false;
+			var alt = false;
+			var starT = null;
+			var target = null;
+			Drag.onmousedown = function(ev){
+				starTDrag = [ev.clientX, ev.clientY];
+				ctrl = ev.ctrlKey || ev.metaKey;
+				if(ediTarget){
+					target = ediTarget;
+					starT = [target.offsetLeft, target.offsetTop];
+				}
+			}
+			Drag.onmousemove = function(ev){
+				if(!starTDrag || !target) return;
+				if(ctrl){
+					// set center
+					
+				}else{
+					target.style.left = ev.clientX-starTDrag[0]+starT[0];
+					target.style.top = ev.clientY-starTDrag[1]+starT[1];
+				}
+				sendProps();
+			}
+			Drag.onmouseup = function(ev){
+				starTDrag = null;
+			}
+			Drag.onmouseover = function(){
+				INf.innerHTML = 'Drag to move object, hold Ctrl to move rotate center.';
+			}
+		})();
+
+		document.body.onmouseup = document.body.onmouseleave = function(){
+			starTBar = false;
+			starTDrag = null;
+
+			
+		}
+
+
+
+		// runner, render
+		// to emulate sync
+		var done1 = true;
+		function Anim(frame){
+			done1 = false;
+			// Scroller.setFrame(frame);
+			for(var j=0, nn=Objs.length; j<nn; ++j){
+				var obj = Objs[j];
+				for(var i=0, n=obj.anim.length; i<n; ++i){
+					var a = obj.anim[i];
+					if(a.start > frame || a.end < frame) continue;
+					// process every anim
+					
+				}
+			}
+			done1 = true;
+		}
+
+		var _iAnim = false;
+		var __iAnim = null;
+		function iAnim(start){
+			// set: scroll, Anim
+			if(_iAnim) return;
+			_iAnim = true;
+			__iAnim = window.setTimeout(function(){
+				if(iFrame > animLength){
+					_iAnim = false;
+					return;
+				}
+				if(done1) Scroller.setFrame(iFrame+1);
+				if(_iAnim) window.setTimeout(arguments.callee, intervTime);
+			}, intervTime);
+		}
+
+		function forceAnim(frame, stop){
+			_iAnim = false;
+			done1 = true;
+			window.clearTimeout(__iAnim);
+			if(!stop) iAnim(frame);
+		}
+
+		Start.onclick = function(){
+			forceAnim();
+		}
+
+		Stop.onclick = function(){
+			forceAnim(0, true);
+		}
+
+
+
+		function _enable(obj, enable){
+			obj.style.display = enable?'block':'none';
+		}
+		
+		exports = {
+			EditMode: function(op){
+				if(op){
+					_enable(Drag, true);
+				}else{
+					_enable(Drag, false);
+				}
+			},
+			Add: function(file, norefresh){
+				add(file, file.name);
+				if(!norefresh) this.RefreshLayouts();
+			},
+
+			Remove: function(index){
+				remove(index);
+				this.RefreshLayouts();
+			},
+
+			Load: function(json){
+				reset(true);
+				body.style = json.main.style;
+				Objs[0].id = json.main.id;
+				Objs[0].anim = json.main.anim;
+				var names = ['(Main Canvas)'];
+				for(var i in json.imgs){
+					var img = json.imgs[i];
+					add(img.url, img.name, img.style, img.anim, img.id);
+					names.push(img.name);
+				}
+				this.RefreshLayouts();
+				editor('loadconfig', names);
+			},
+
+			Compile: function(){
+				/* var mk = function(url,id,name,style,anim){
+					return {
+						url: url,
+						id: id,
+						name: name,
+						style: style,
+						anim: anim
+					}
+				}*/
+				var sav = {
+					main: null,
+					imgs: []
+				};
+				var _O = Objs[0];
+				var _C = body;
+				sav.main = {
+					id: _O.id,
+					style: _C.style.cssText,
+					anim: _O.anim
+				};
+				for(var i=1, n=body.childElementCount; i<n; ++i){
+					var O = Objs[i];
+					var C = body.children[i];
+					sav.imgs.push({
+						url: O.url,
+						id: O.id,
+						name: O.name,
+						style: C.style.cssText,
+						anim: O.anim
+					});
+					// sav.imgs.push(mk(O.url, O.id, O.name, C.style.cssText, O.anim));
+				}
+				editor('compile', sav);
+			},
+
+			RefreshLayouts: function(){
+				for(var i=0, n=body.childElementCount; i<n; ++i){
+					body.children[i].style.zIndex=n-i;
+				}
+			},
+
+			SwapObj: function(is){
+				swapObj(is[0], is[1]);
+				this.RefreshLayouts();
+			},
+
+			// d: {dir, index}
+			Move: function(d){
+				var i = d.i;
+				switch(d.dir){
+					default:break;
+					case 'up':
+						if(i>0) swapObj(i-1, i);
+						break;
+					case 'down':
+						if(i<Objs.length-1) swapObj(i, i+1);
+						break;
+				}
+			},
+
+			Focus: function(index){
+				if(index == 'MAIN'){
+					focus = 'MAIN';
+					ediTarget = body;
+				}else{
+					focus = Objs[index].id;
+					ediTarget = body.children[index];
+				}
+
+				// send back opts to editor
+				sendProps(index);
+			},
+
+			Edit: function(d){
+				var key = d[0];
+				var value = d[1];
+				if(ediTarget){
+					if(key.indexOf(':')!=-1){
+						var K = key.split(':');
+						console.log(K)
+						ediTarget.style[K[0]] = ediTarget.style[K[0]].replace(new RegExp(K[1]), K[2]).replace('%%%', value);
+					}else{
+						ediTarget.style[key] = value;
+					}
+				}else console.log('Object focus not set.');
+			},
+
+			setFrameMode: function(d){
+				var frame = d.frame;
+				var key = d.isKey;
+
+				// TODO add to frameline
+			}
+		}
+
+		addEventListener('message', function(d){
+			var dat = d.data;
+			exports[dat.operation](dat.data);
+		});
+
+	</script>
+</html>
+
+
+

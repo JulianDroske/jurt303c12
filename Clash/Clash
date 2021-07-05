@@ -1,0 +1,10 @@
+#!/bin/sh
+
+cd "$(dirname $0)"
+[ ! -f subscription.yaml ] && { wget -O subscription.yaml "$(cat subscription)" || { echo 'Error: Configuration file not found.' ; exit ; } ; }
+./clash -f subscription.yaml -t || { echo 'Error: Invalid configuration file.'; exit; }
+./clash -f subscription.yaml &
+firefox-esr ./index.html &
+echo Exit this shell to kill the proxy
+sh
+killall clash

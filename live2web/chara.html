@@ -1,0 +1,340 @@
+<html>
+	<head>
+		<style>
+			* {
+				font-family: monospace;
+			}
+			div {
+				padding: 0;
+				margin: 0;
+			}
+			body > * {
+				border: 2px black solid;
+				margin: -3px;
+			}
+			button, input, select {
+				border-style: outset;
+			}
+			span {
+				font-size: 80%;
+				margin: 0.2%;
+			}
+			.list {
+				overflow: auto;
+			}
+			.list > * {
+				width: 100%;
+				display: flex;
+			}
+			.list > * > * {
+				flex: 1;
+				/* border-top: none; */
+			}
+			.textinput {
+				border-style: outset;
+				border-top: none;
+				border-bottom: grey solid 2px;
+			}
+			.textinput:hover {
+				border-bottom: black solid 2px;
+			}
+		</style>
+	</head>
+	<body style='margin: unset; height: 100%; width: 100%; overflow: hidden;'>
+		<div rem='show' style='width: 70%; height: 100%; position: absolute; left: 0px; top: 0px;'>
+			<iframe src='chararun.html' id='RUNNER' style='width: 100%; height: 100%; border: none;'></iframe>
+		</div>
+		<div rem='list' style='display: flex; flex-direction: column; position: absolute; width: 30%; height: 50%; right: 0px; top: 0px;'>
+			<div rem='btns' style='display: inline; vertical-align: top;'>
+				<button id='ADD'>Add...</button>
+				<button id='RM'>Remove</button>
+				<button id='UP'>Move Up</button>
+				<button id='DN'>Move Down</button>
+				<button id='SAVE'>Save As...</button>
+				<button id='LOAD'>Load...</button>
+			</div>
+			<select id='OBJS' size='8' style='flex: 1; overflow: auto;'>
+			</select>
+		</div>
+		<div rem='perference' class='list' style='width: 30%; height: 50%; display: flex; flex-direction: column; position: absolute; right: 0px; bottom: 0px;'>
+			<div><button id='_reset'>Reset state</button></div>
+			<div style='height: 5px; background: grey; margin-top: 2px; margin-bottom: 5px;'></div>
+			<span style='background: grey; color: white;'>Object properties:</span>
+			<div>X: <input class='textinput' id='_x' type='text'></input>px</div>
+			<div>Y: <input class='textinput' id='_y' type='text'></input>px</div>
+			<div>ZoomX: <input class='textinput' id='_zx' type='text'></input></div>
+			<div>ZoomY: <input class='textinput' id='_zy' type='text'></input></div>
+			<div>Width: <input class='textinput' id='_w' type='text'></input></div>
+			<div>Height: <input class='textinput' id='_h' type='text'></input></div>
+			<div>RotCenterX: <input class='textinput' id='_rx' type='text'></input>px</div>
+			<div>RotCenterY: <input class='textinput' id='_ry' type='text'></input>px</div>
+			<div>Rotate: <input class='textinput' id='_r' type='text'></input>degree</div>
+			<span style='background: grey; color: white;'>Anime properties:</span>
+			<div>AnimType: <select id='_type'>
+				<option value='non-keyframe'>Not a keyframe</option>
+				<option value='smooth'>Smooth</option>
+				<option value='direct'>Direct</option>
+				<option value='custom'>Custom...</option>
+			</select></div>
+		</div>
+		<input id='SELECTER' type='file' style='display: none;'></input>
+		<a id='SAVER' download style='display: none;'></a>
+	</body>
+
+	<script>
+		const Runner = document.getElementById('RUNNER');
+		const ObjList = document.getElementById('OBJS');
+		// const Perference = document.getElementById('PERFER');
+
+		const Add = document.getElementById('ADD');
+		const Remove = document.getElementById('RM');
+		const MoveUp = document.getElementById('UP');
+		const MoveDown = document.getElementById('DN');
+		const Save = document.getElementById('SAVE');
+		const Load = document.getElementById('LOAD');
+		
+		const FileRead = document.getElementById('SELECTER');
+		const SAVER = document.getElementById('SAVER');
+
+		const ResetAttr = document.getElementById('_reset');
+
+		const Preference = {
+			x: document.getElementById('_x'),
+			y: document.getElementById('_y'),
+			zx: document.getElementById('_zx'),
+			zy: document.getElementById('_zy'),
+			w: document.getElementById('_w'),
+			h: document.getElementById('_h'),
+			rotx: document.getElementById('_rx'),
+			roty: document.getElementById('_ry'),
+			rotate: document.getElementById('_r'),
+
+			animType: document.getElementById('_type')
+		};
+
+		function mkOpt(name, id){
+			var opt = document.createElement('option');
+			opt.innerHTML = name;
+			opt.value = id;
+			return opt;
+		}
+
+		// format: [cssStyle, default value]
+		var premap = {
+			'x': 'left',
+			'y': 'top',
+			'zx': 'transform:scaleX\\(.*\\):scaleX(%%%)',
+			'zy': 'transform:scaleY\\(.*\\):scaleY(%%%)',
+			'w': 'width',
+			'h': 'height',
+			'rotx': 'transform-origin:\\S* :%%% ',
+			'roty': 'transform-origin: \\S* :%%% ',
+			// 'rotate': 'transform:scale\\(.*\\):rotate(%%%)'
+			'rotate': 'rotate'
+		}
+
+		var premapv = {
+			'rotate': ['(.+)(deg)*', '$1deg']
+		}
+
+		function setPreference(key, value){
+			if(Object.keys(premap).indexOf(key)!=-1){
+				key = premap[key];
+			}
+			if(Object.keys(premapv).indexOf(key)!=-1){
+				var mv = premapv[key];
+				value = value.replace(new RegExp(mv[0],'g'), mv[1]);
+			}
+			runner('Edit', [key, value]);
+		}
+
+		for(var i in Preference){
+			if(i.startsWith('anim')){
+				// to frame
+			}else{
+				(function(name){
+					Preference[i].onchange = function(){
+						// after edit
+						setPreference(name, this.value);
+						// else Preference[i].init = true;
+					}
+				})(i);
+			}
+		}
+
+		var iDv=1;
+		
+		function runner(operation, data){
+			Runner.contentWindow.postMessage({operation: operation, data: data}, '*');
+		}
+
+		function resetPreference(){
+			for(var i in Preference){
+				Preference[i].value = '';
+			}
+		}
+
+		function reset(fresh){
+			iDv = 1;
+			ObjList.innerHTML = '';
+			// Add the main canvas
+			if(fresh) ObjList.appendChild(mkOpt('(Main Canvas)'), 'MAIN');
+			resetPreference();
+		}
+		reset(true);
+
+		// Deprecated
+		function nowObjv(){
+			throw 'Deprecated function nowObjv()';
+			return ObjList.value;
+		}
+
+		function nowObji(value){
+			var v = value || ObjList.value;
+			for(var i=0; i<ObjList.options.length; ++i){
+				if(v == ObjList.options[i].value) return [i, ObjList.options[i]];
+			}
+			return null;
+		}
+
+		function swapObj(i1, i2){
+			// ObjList.options[i1] = ObjList.options.splice(i2, 1, ObjList.options[i1]);
+			/* var temp = ObjList.options[i1];
+			ObjList.options[i1] = ObjList.options[i2];
+			ObjList.options[i2] = temp;*/
+			// [ObjList.options[i1], ObjList.options[i2]] = [ObjList.options[i2], ObjList.options[i1]];
+			if(i1 > i2) [i1, i2] = [i2, i1];
+			ObjList.insertBefore(ObjList.options[i2], ObjList.options[i1]);
+			runner('SwapObj', [i1, i2]);
+		}
+
+
+		Add.onclick = function(){
+			// select file...
+			FileRead.onchange = function(){
+				var file = FileRead.files[0];
+				var name = file.name;
+				file.id = iDv;
+
+				// append to html
+				/* var opt = document.createElement('option');
+				opt.innerHTML = name;
+				opt.value = iDv;
+				ObjList.appendChild(opt);*/
+				ObjList.appendChild(mkOpt(name, iDv));
+				// append to runner
+				runner('Add', file);
+
+				iDv++;
+				FileRead.onchange = null;
+			}
+			FileRead.dispatchEvent(new MouseEvent('click'));
+		}
+
+		Remove.onclick = function(){
+			var I = nowObji();
+			if(I){
+				ObjList.removeChild(I[1]);
+				runner('Remove', I[0]);
+			}
+		}
+
+		MoveUp.onclick = function(){
+			var I = nowObji();
+			if(I && I[0]>0) swapObj(I[0]-1, I[0]);
+		}
+
+		MoveDown.onclick = function(){
+			var I = nowObji();
+			if(I && I[0]<ObjList.length-1) swapObj(I[0], I[0]+1);
+		}
+		
+		Save.onclick = function(){
+			runner('Compile');
+		}
+
+		Load.onclick = function(){
+			FileRead.onchange = function(){
+				var file = FileRead.files[0];
+
+				var reader = new FileReader();
+				reader.onload = function(){
+					try{
+						var json = JSON.parse(this.result);
+					}catch(e){
+						console.log('File is not a json config file.');
+						return;
+					}
+					runner('Load', json);
+				}
+				reader.onerror = function(){
+					console.log('Error when loading config file.');
+				}
+				reader.readAsText(file);
+				
+				FileRead.onchange = null;
+			}
+			FileRead.dispatchEvent(new MouseEvent('click'));
+		}
+
+		ObjList.onchange = function(){
+			var obj = nowObji();
+			if(obj[0]==0){
+				// main
+				Remove.disabled = true;
+				Preference.zx.disabled = true;
+				Preference.zy.disabled = true;
+				Preference.w.disabled = false;
+				Preference.h.disabled = false;
+				runner('Focus', 'MAIN');
+			}else{
+				Remove.disabled = false;
+				Preference.zx.disabled = false;
+				Preference.zy.disabled = false;
+				Preference.w.disabled = true;
+				Preference.h.disabled = true;
+				runner('Focus', obj[0]);
+			}
+		}
+
+		var op = {
+			'loaderror': function(iDv){
+				var I = nowObji(iDv);
+				I[1].disabled=true;
+			},
+			'compile': function(json){
+				var blob = new Blob([JSON.stringify(json)], {type: 'text/json'});
+				SAVER.href = window.URL.createObjectURL(blob);
+				SAVER.dispatchEvent(new MouseEvent('click'));
+			},
+			'loadconfig': function(names){
+				reset();
+
+				for(var i in names){
+					var name = names[i];
+					var opt = document.createElement('option');
+					opt.innerHTML = name;
+					// opt.value = ObjList.options.length;
+					opt.value = iDv;
+					iDv++;
+					ObjList.appendChild(opt);
+				}
+			},
+			'prop': function(props){
+				// aka. preference
+				for(var i in props){
+					try{ Preference[i].value = props[i]; }catch(e){}
+				}
+				Preference.animType.value = 'non-keyframe';
+			}
+		};
+		addEventListener('message', function(d){
+			var dat = d.data;
+			op[dat.operation](dat.data);
+		});
+
+		Runner.onload = function(){
+			runner('EditMode', true);
+		}
+	</script>
+</html>
